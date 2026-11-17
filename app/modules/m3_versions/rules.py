@@ -3,7 +3,7 @@ from app.errors import DomainError
 from decimal import Decimal
 
 def apply(state):
-    limits=standards();reports=[];bad=[]
+    limits=standards((state.get('parameters') or {}).get('limits_csv') or None);reports=[];bad=[]
     for r in state['rows']:
         try:
             if r['reported']<r['sampled'] or Decimal(str(r['lod']))<=0:raise DomainError('RANGE','报告日期或检出限无效')

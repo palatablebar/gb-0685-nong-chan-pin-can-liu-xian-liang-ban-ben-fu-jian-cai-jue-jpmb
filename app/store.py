@@ -1,4 +1,5 @@
 import sqlite3,json,os
+from datetime import datetime,timezone
 from pathlib import Path
 from app.errors import DomainError
 
@@ -7,6 +8,7 @@ def connection():
     db=sqlite3.connect(path,timeout=10);db.row_factory=sqlite3.Row
     db.execute('PRAGMA journal_mode=WAL')
     db.execute('CREATE TABLE IF NOT EXISTS runs (id TEXT PRIMARY KEY, body TEXT NOT NULL, version INTEGER NOT NULL DEFAULT 1, decision TEXT NOT NULL DEFAULT "待复核")')
+    db.execute('CREATE TABLE IF NOT EXISTS revisions (id TEXT PRIMARY KEY, run_id TEXT NOT NULL, seq INTEGER NOT NULL, status TEXT NOT NULL, error TEXT, body TEXT, created_at TEXT NOT NULL)')
     db.execute('CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY,value TEXT NOT NULL)')
     return db
 
@@ -33,3 +35,25 @@ def review(run_id, version, decision):
             if not db.execute('SELECT 1 FROM runs WHERE id=?',(run_id,)).fetchone():raise DomainError('NOT_FOUND','批次不存在',404)
             raise DomainError('STALE','复核版本已更新，请刷新',409)
     return get(run_id)
+
+def _revision(row):
+    out=dict(row);out['body']=json.loads(out['body']) if out['body'] else None;return out
+
+def find_revision(rev_id):
+    with connection() as db:r=db.execute('SELECT * FROM revisions WHERE id=?',(rev_id,)).fetchone()
+    return _revision(r) if r else None
+
+def get_revision(rev_id):
+    r=find_revision(rev_id)
+    if not r:raise DomainError('NOT_FOUND','修订记录不存在',404)
+    return r
+
+def save_revision(rev_id, run_id, status, error, body):
+    with connection() as db:
+        db.execute('INSERT OR IGNORE INTO revisions(id,run_id,seq,status,error,body,created_at) VALUES (?,?,(SELECT COALESCE(MAX(seq),0)+1 FROM revisions WHERE run_id=?),?,?,?,?)',
+            (rev_id,run_id,run_id,status,error,json.dumps(body,ensure_ascii=False) if body is not None else None,datetime.now(timezone.utc).isoformat()))
+    return get_revision(rev_id)
+
+def revisions_for(run_id):
+    with connection() as db:rows=db.execute('SELECT * FROM revisions WHERE run_id=? ORDER BY seq',(run_id,)).fetchall()
+    return [_revision(r) for r in rows]

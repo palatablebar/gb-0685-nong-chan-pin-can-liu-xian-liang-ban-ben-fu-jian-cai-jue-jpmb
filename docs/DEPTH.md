@@ -13,6 +13,7 @@
 | M5 复检裁决 | 查看并复算复检裁决 | `/api/m5_calculate` | `app/modules/m5_calculate/rules.py` | `tests/test_calculate.py` |
 | M6 批次判级 | 查看并复算批次判级 | `/api/m6_reconcile` | `app/modules/m6_reconcile/compare.py` | `tests/test_reconcile.py` |
 | M7 报告归档 | 查看并复算报告归档 | `/api/m7_archive` | `app/modules/m7_archive/export_out.py` | `tests/test_archive.py` |
+| M8 修订裁决 | 提交更正并核对修订 | `/api/m8_revision` | `app/modules/m8_revision/service.py` | `tests/test_revision.py` |
 
 ## 陷阱登记
 
@@ -32,6 +33,10 @@
 | TRAP-15 | ug/kg与mg/kg | 差1000倍 | 浓度统一mg/kg | `app/modules/m4_segments/rules.py` | `tests/test_segments.py::test_unit_conversion` |
 | TRAP-25 | 标准时间边界 | 双版或错版 | 采样日半开区间选版 | `app/modules/m3_versions/standards.py` | `tests/test_versions.py::test_halfopen_effective` |
 | TRAP-20 | 复检引用环 | 遍历无法结束 | 引用路径检测 | `app/modules/m5_calculate/rules.py` | `tests/test_calculate.py::test_cycle_rejected` |
+| TRAP-30 | 更正重跑 | 重复版本与项目 | 修订号哈希幂等 | `app/modules/m8_revision/handler.py` | `tests/test_revision.py::test_revision_idempotent_no_new_version` |
+| TRAP-31 | 修订失败 | 覆盖已签发结论 | 失败留痕旧版保持 | `app/modules/m8_revision/handler.py` | `tests/test_revision.py::test_failed_revision_keeps_old_conclusion` |
+| TRAP-32 | 更正丢项目 | 已签发项目消失 | 项目缺失拒签 | `app/modules/m8_revision/service.py` | `tests/test_revision.py::test_missing_item_protection` |
+| TRAP-33 | 晚到报告错位 | 列序不一致串列 | 按原表头对齐追加 | `app/modules/m8_revision/service.py` | `tests/test_revision.py::test_revision_joint_adjudication` |
 
 ## 对账规则
 

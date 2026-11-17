@@ -1,6 +1,6 @@
 import time,importlib,json,base64
 from pathlib import Path
-from app.config import MODULES
+from app.config import PIPELINE
 from app.errors import DomainError
 from app.manifest import identity,manifest
 
@@ -13,7 +13,7 @@ def run(content,parameters=None,stage=7):
     params=parameters or {}
     if not isinstance(params,dict):raise DomainError('PARAMETERS','参数必须是对象')
     start=time.monotonic();state=None
-    for n,entry in enumerate(MODULES,1):
+    for n,entry in enumerate(PIPELINE,1):
         if n>stage:break
         fn=importlib.import_module('app.modules.'+entry[0]+'.service').execute
         state=fn(content,params) if n==1 else fn(state)

@@ -19,10 +19,17 @@ docker compose up --build -d
 - 复检裁决：`/m5_calculate`、`/api/m5_calculate`
 - 批次判级：`/m6_reconcile`、`/api/m6_reconcile`
 - 报告归档：`/m7_archive`、`/api/m7_archive`
+- 修订裁决：`/m8_revision`、`/api/m8_revision`
 
 ## 核心规则
 
 按采样日期选择有效限量，低于检出限保留区间；复检不得越过样本关联与方法适用范围。完整数值、边界和异常定义见 `docs/DATA-DICTIONARY.md`。
+
+## 修订裁决
+
+批次签字出证后，上游更正限量版本或同批晚到复检报告时，在 `/m8_revision` 提交更正：更正后限量表经 `parameters.limits_csv` 注入限量选版，晚到报告按原表头对齐追加到原始来源后重跑全流程，两者共同决定项目结论与批次等级。原批记录永不改动，旧签字依据（结论、复核版本、校验签、证据CSV）可核对。
+
+修订号为基批与更正内容的哈希：同一更正重跑返回原记录，不新增版本或重复项目。重跑结果须对账平衡且已签发项目不缺失，否则记为失败修订并留痕，旧版结论保持有效。页面列出项目级变化（结论、限量、采纳报告与成因）与批次升降级原因，失败与生效记录均保留。样例更正见 `sample_data/limits_corrected.csv` 与 `sample_data/retest_late.csv`。
 
 ## 验证
 
